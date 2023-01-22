@@ -1,0 +1,119 @@
+﻿@page "/todos"
+@using Microsoft.AspNetCore.Components
+@inject ToDoList.Data.Repositories.ITodoService todoService
+
+<div class="container-md">
+    <div class="row">
+        <div class="col">
+            <h2 class="text-center">Todo</h2>
+            <div class="row" style="margin-bottom: 20px">
+                <div class="col">
+                    <input class="form-control" placeholder="Type something to do" @bind="newTodo"/>
+                </div>
+                <div class="col">
+                    <input class="form-control" placeholder="On time..." @bind="time"/>
+                </div>
+            </div>
+            <div class="row" style="margin-bottom: 20px">
+                <div class="col">
+                    <button class="btn btn-success" @onclick="AddTodo">Add todo</button>
+                </div>
+            </div>
+            <table class="table table-borderless table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Number</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">On Time</th>
+                        <th scope="col">Is Done</th>
+                        <th scope="col">Update</th>
+                        <th scope="col">Delete</th>
+                    </tr>
+                </thead>
+                @{ int i = 1; }
+                @foreach (var item in todos)
+                {
+                    <tbody style="@(item.IsDone ? "background-color: green" : "")">
+                        <tr>
+                            <td>
+                                @i
+                                @{ i++;}
+                            </td>
+                            @if (!item.IsUpdating)
+                            {
+                                <td>
+                                    @item.Title
+                                </td>
+                                <td>
+                                    @item.OnTime
+                                </td>
+                            }
+                            else
+                            {
+                                <td>
+                                    <input class="form-control" @bind="item.Title"/>
+                                </td>
+                                <td>
+                                    <input class="form-control" @bind="item.OnTime"/>
+                                </td>
+                            }
+                            
+                            @if (!item.IsDone)
+                            {
+                                <td>
+                                    <input type="checkbox" value="@item.IsDone" @onchange="() => ChangeTodoStatus(item)"/>
+                                </td>
+                            }
+                            else
+                            {
+                                <td>
+                                    <input type="checkbox" checked value="@item.IsDone" @onchange="() => ChangeTodoStatus(item)"/>
+                                </td>
+                            }
+                            <td>
+                                <button class="btn btn-warning" @onclick="() => item.IsUpdating = !item.IsUpdating">Update</button>
+                            </td>
+                            <td>
+                                <button class="btn btn-danger" @onclick="() => DeleteTodo(item)">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                }
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IEnumerable<TodoItem> todos = new List<TodoItem>();
+    
+    protected override void OnInitialized()
+    {
+        todos = todoService.GetAll();
+    }
+
+    private string newTodo;
+
+    private string time;
+    
+    private void AddTodo()
+    {
+        if (!string.IsNullOrWhiteSpace(newTodo))
+        {
+            todoService.CreateTodoItem(new TodoItem { Id = Guid.NewGuid(), Title = newTodo, IsDone = false, OnTime = time, IsUpdating = false});
+            newTodo = string.Empty;
+            time = string.Empty;
+        }
+    }
+
+    private void DeleteTodo(TodoItem item)
+    {
+        todoService.DeleteTodoItem(item);
+    }
+
+    private void ChangeTodoStatus(TodoItem item)
+    {
+        item.IsDone = !item.IsDone;
+        todoService.UpdateTodoItem(item);
+    }
+}
